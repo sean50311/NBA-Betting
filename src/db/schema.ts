@@ -1,19 +1,26 @@
-import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
+import {
+  pgTable,
+  serial,
+  text,
+  integer,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   nickname: text("nickname").notNull(),
   avatarDataUrl: text("avatar_data_url"),
   points: integer("points").notNull().default(1000),
-  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
+  createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull(),
 });
 
-export const bets = sqliteTable(
+export const bets = pgTable(
   "bets",
   {
-    id: integer("id").primaryKey({ autoIncrement: true }),
+    id: serial("id").primaryKey(),
     userId: integer("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
@@ -24,9 +31,9 @@ export const bets = sqliteTable(
     round: integer("round").notNull(),
     status: text("status").notNull(),
     payout: integer("payout"),
-    settledAt: integer("settled_at", { mode: "timestamp_ms" }),
-    createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
-    updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
+    settledAt: timestamp("settled_at", { mode: "date", withTimezone: true }),
+    createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull(),
+    updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).notNull(),
   },
   (t) => [uniqueIndex("bets_user_game").on(t.userId, t.gameId)]
 );

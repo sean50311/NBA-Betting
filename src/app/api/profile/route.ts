@@ -37,9 +37,9 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "沒有要更新的欄位" }, { status: 400 });
   }
 
-  db.update(users).set(patch).where(eq(users.id, uid)).run();
+  await db.update(users).set(patch).where(eq(users.id, uid));
 
-  const rows = db.select().from(users).where(eq(users.id, uid)).all();
+  const rows = await db.select().from(users).where(eq(users.id, uid));
   const u = rows[0]!;
 
   return NextResponse.json({

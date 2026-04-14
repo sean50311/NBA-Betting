@@ -36,25 +36,24 @@ export async function placeOrUpdateBet(
   const odds = oddsForRound(round);
   const oddsBps = oddsToBps(odds);
 
-  db.transaction((tx) => {
-    const existingRows = tx
+  await db.transaction(async (tx) => {
+    const existingRows = await tx
       .select()
       .from(bets)
-      .where(and(eq(bets.userId, userId), eq(bets.gameId, gameId)))
-      .all();
+      .where(and(eq(bets.userId, userId), eq(bets.gameId, gameId)));
     const existing = existingRows[0];
 
-    const userRows = tx.select().from(users).where(eq(users.id, userId)).all();
+    const userRows = await tx.select().from(users).where(eq(users.id, userId));
     const row = userRows[0];
     if (!row) throw new Error("使用者不存在");
 
     if (stake === 0) {
       if (!existing) return;
-      tx.update(users)
+      await tx
+        .update(users)
         .set({ points: sql`${users.points} + ${existing.stake}` })
-        .where(eq(users.id, userId))
-        .run();
-      tx.delete(bets).where(eq(bets.id, existing.id)).run();
+        .where(eq(users.id, userId));
+      await tx.delete(bets).where(eq(bets.id, existing.id));
       return;
     }
 
@@ -63,12 +62,13 @@ export async function placeOrUpdateBet(
     if (balance < stake) throw new Error("積分不足");
 
     if (existing) {
-      tx.update(users)
+      await tx
+        .update(users)
         .set({ points: sql`${users.points} + ${existing.stake} - ${stake}` })
-        .where(eq(users.id, userId))
-        .run();
+        .where(eq(users.id, userId));
 
-      tx.update(bets)
+      await tx
+        .update(bets)
         .set({
           pickedTeamId,
           stake,
@@ -76,27 +76,24 @@ export async function placeOrUpdateBet(
           round,
           updatedAt: new Date(),
         })
-        .where(eq(bets.id, existing.id))
-        .run();
+        .where(eq(bets.id, existing.id));
     } else {
-      tx.update(users)
+      await tx
+        .update(users)
         .set({ points: sql`${users.points} - ${stake}` })
-        .where(eq(users.id, userId))
-        .run();
+        .where(eq(users.id, userId));
 
-      tx.insert(bets)
-        .values({
-          userId,
-          gameId,
-          pickedTeamId,
-          stake,
-          odds: oddsBps,
-          round,
-          status: "pending",
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        })
-        .run();
+      await tx.insert(bets).values({
+        userId,
+        gameId,
+        pickedTeamId,
+        stake,
+        odds: oddsBps,
+        round,
+        status: "pending",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     }
   });
 }

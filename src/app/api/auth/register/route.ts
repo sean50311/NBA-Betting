@@ -21,7 +21,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "密碼至少 6 字元" }, { status: 400 });
     }
 
-    const dup = db.select().from(users).where(eq(users.username, username)).all();
+    const dup = await db.select().from(users).where(eq(users.username, username));
     if (dup.length > 0) {
       return NextResponse.json({ error: "此帳號已被使用" }, { status: 409 });
     }
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const passwordHash = await hashPassword(password);
     const now = new Date();
 
-    const inserted = db
+    const inserted = await db
       .insert(users)
       .values({
         username,
@@ -38,8 +38,7 @@ export async function POST(req: Request) {
         points: INITIAL_POINTS,
         createdAt: now,
       })
-      .returning({ id: users.id })
-      .all();
+      .returning({ id: users.id });
 
     const id = inserted[0]?.id;
     if (!id) throw new Error("註冊失敗");

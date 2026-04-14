@@ -12,7 +12,7 @@ export async function GET() {
     return NextResponse.json({ user: null });
   }
 
-  const rows = db.select().from(users).where(eq(users.id, uid)).all();
+  const rows = await db.select().from(users).where(eq(users.id, uid));
   const u = rows[0];
   if (!u) {
     return NextResponse.json({ user: null });

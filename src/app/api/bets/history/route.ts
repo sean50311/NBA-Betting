@@ -14,7 +14,11 @@ export async function GET() {
     return NextResponse.json({ error: "請先登入" }, { status: 401 });
   }
 
-  const rows = db.select().from(bets).where(eq(bets.userId, uid)).orderBy(desc(bets.createdAt)).all();
+  const rows = await db
+    .select()
+    .from(bets)
+    .where(eq(bets.userId, uid))
+    .orderBy(desc(bets.createdAt));
 
   const items = [];
   for (const b of rows) {

@@ -16,32 +16,31 @@ export async function settlePendingBetsForGames(gameIds: number[]): Promise<numb
     const winId = winnerTeamId(game);
     if (winId == null) continue;
 
-    const pending = db
+    const pending = await db
       .select()
       .from(bets)
-      .where(and(eq(bets.gameId, gid), eq(bets.status, "pending")))
-      .all();
+      .where(and(eq(bets.gameId, gid), eq(bets.status, "pending")));
 
     for (const b of pending) {
       const odds = bpsToOdds(b.odds);
       const won = b.pickedTeamId === winId;
       const payout = won ? Math.round(b.stake * odds) : 0;
 
-      db.transaction((tx) => {
-        tx.update(bets)
+      await db.transaction(async (tx) => {
+        await tx
+          .update(bets)
           .set({
             status: won ? "won" : "lost",
             payout,
             settledAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(bets.id, b.id))
-          .run();
+          .where(eq(bets.id, b.id));
 
-        tx.update(users)
+        await tx
+          .update(users)
           .set({ points: sql`${users.points} + ${payout}` })
-          .where(eq(users.id, b.userId))
-          .run();
+          .where(eq(users.id, b.userId));
       });
 
       settled++;

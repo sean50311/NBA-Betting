@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const username = String(body.username ?? "").trim();
     const password = String(body.password ?? "");
 
-    const rows = db.select().from(users).where(eq(users.username, username)).all();
+    const rows = await db.select().from(users).where(eq(users.username, username));
     const user = rows[0];
     if (!user) {
       return NextResponse.json({ error: "帳號或密碼錯誤" }, { status: 401 });

@@ -12,7 +12,7 @@ export async function GET() {
     return NextResponse.json({ error: "請先登入" }, { status: 401 });
   }
 
-  const all = db.select().from(bets).where(eq(bets.userId, uid)).all();
+  const all = await db.select().from(bets).where(eq(bets.userId, uid));
 
   const settled = all.filter((b) => b.status !== "pending");
   const wins = settled.filter((b) => b.status === "won").length;
