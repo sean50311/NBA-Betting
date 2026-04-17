@@ -3,9 +3,9 @@
  * 每年季後賽開打後請依實際賽程調整下列邊界日期（皆為當地比賽日 YYYY-MM-DD，依 API 的 game.date）。
  *
  * 輪次：第一輪 → 第二輪 → 分區冠軍 → 總冠軍
- * 賠率（十進位小數，贏家總返還 = stake × 賠率）：1, 1.5, 2, 3
+ * 賠率（十進位小數，贏家總返還 = stake × 賠率）：2, 2.5, 3, 4
  */
-export const ROUND_ODDS = [1, 1.5, 2, 3] as const;
+export const ROUND_ODDS = [2, 2.5, 3, 4] as const;
 
 /** 預設以 2025–26 季後賽常見時程為範例；可透過環境變數覆寫 */
 function boundaryDates() {
