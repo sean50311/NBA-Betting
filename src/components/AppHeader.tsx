@@ -47,6 +47,9 @@ export function AppHeader() {
           <Link href="/bets" className="text-zinc-300 hover:text-white">
             我的下注
           </Link>
+          <Link href="/leaderboard" className="text-zinc-300 hover:text-white">
+            排行榜
+          </Link>
           {me === undefined ? (
             <span className="text-zinc-500">…</span>
           ) : me ? (
