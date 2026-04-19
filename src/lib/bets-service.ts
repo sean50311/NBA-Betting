@@ -1,7 +1,7 @@
 import { eq, and, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { bets, users } from "@/db/schema";
-import { fetchGameById } from "./nba-client";
+import { fetchGameForBetting } from "./nba-client";
 import { gameHasStarted } from "./game-state";
 import {
   oddsForRound,
@@ -20,7 +20,7 @@ export async function placeOrUpdateBet(
   if (stake < 0) throw new Error("下注金額無效");
   if (stake > 0 && stake < 1) throw new Error("下注至少 1 分");
 
-  const game = await fetchGameById(gameId);
+  const game = await fetchGameForBetting(gameId);
   if (!game) throw new Error("找不到比賽");
   if (!game.postseason) throw new Error("僅限季後賽場次");
 

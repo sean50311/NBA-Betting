@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { fetchAllPlayoffGames, hasNbaApiKey } from "@/lib/nba-client";
+import {
+  fetchAllPlayoffGames,
+  hasNbaApiKey,
+  nbaSeasonFromEnv,
+} from "@/lib/nba-client";
 import { settlePendingBetsForGames } from "@/lib/settlement";
 import { gameHasStarted, gameIsFinal } from "@/lib/game-state";
 import { getSessionUserId } from "@/lib/session-server";
@@ -10,12 +14,6 @@ import { oddsForRound, playoffRoundFromDate } from "@/config/playoff";
 import { bpsToOdds } from "@/config/playoff";
 
 export const runtime = "nodejs";
-
-function seasonFromEnv(): number {
-  const s = process.env.NBA_SEASON;
-  if (s && /^\d+$/.test(s)) return parseInt(s, 10);
-  return 2025;
-}
 
 export async function GET() {
   if (!hasNbaApiKey()) {
@@ -29,7 +27,7 @@ export async function GET() {
   }
 
   try {
-    const season = seasonFromEnv();
+    const season = nbaSeasonFromEnv();
     const games = await fetchAllPlayoffGames(season);
 
     const ids = games.map((g) => g.id);

@@ -11,7 +11,29 @@ export function hasNbaApiKey(): boolean {
   return !!getApiKey();
 }
 
-export async function fetchAllPlayoffGames(season: number): Promise<NBAGame[]> {
+/** 與 `/api/games` 相同預設球季（BallDontLie `seasons[]`） */
+export function nbaSeasonFromEnv(): number {
+  const s = process.env.NBA_SEASON;
+  if (s && /^\d+$/.test(s)) return parseInt(s, 10);
+  return 2025;
+}
+
+/**
+ * 下注／驗證用：先打單場 API；若失敗（部分場次單場端回 404 但列表仍有），改從季後賽列表尋找。
+ * 一律略過快取，避免與賽程頁不一致。
+ */
+export async function fetchGameForBetting(id: number): Promise<NBAGame | null> {
+  const direct = await fetchGameById(id, { noCache: true });
+  if (direct) return direct;
+
+  const all = await fetchAllPlayoffGames(nbaSeasonFromEnv(), { noCache: true });
+  return all.find((g) => g.id === id) ?? null;
+}
+
+export async function fetchAllPlayoffGames(
+  season: number,
+  options?: { noCache?: boolean }
+): Promise<NBAGame[]> {
   const key = getApiKey();
   if (!key) return [];
 
@@ -27,7 +49,9 @@ export async function fetchAllPlayoffGames(season: number): Promise<NBAGame[]> {
 
     const res = await fetch(`${BASE}/games?${params.toString()}`, {
       headers: { Authorization: key },
-      next: { revalidate: 60 },
+      ...(options?.noCache
+        ? { cache: "no-store" as const }
+        : { next: { revalidate: 60 } }),
     });
 
     if (!res.ok) {
