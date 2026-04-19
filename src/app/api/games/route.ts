@@ -33,12 +33,13 @@ export async function GET() {
     const games = await fetchAllPlayoffGames(season);
 
     const ids = games.map((g) => g.id);
+    const gamesById = new Map(games.map((g) => [g.id, g]));
     const pendRows = await db
       .select({ gameId: bets.gameId })
       .from(bets)
       .where(eq(bets.status, "pending"));
     const pendIds = [...new Set(pendRows.map((r) => r.gameId))];
-    await settlePendingBetsForGames([...new Set([...ids, ...pendIds])]);
+    await settlePendingBetsForGames([...new Set([...ids, ...pendIds])], gamesById);
 
     const uid = await getSessionUserId();
     const userBets =

@@ -18,7 +18,7 @@ export default function Home() {
   const [season, setSeason] = useState<number | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [me, setMe] = useState<Me | undefined>(undefined);
-  const [modalGame, setModalGame] = useState<GameRow | null>(null);
+  const [modal, setModal] = useState<{ game: GameRow; readOnly: boolean } | null>(null);
 
   const loadGames = useCallback(() => {
     fetch("/api/games")
@@ -157,12 +157,12 @@ export default function Home() {
                   </p>
                 )}
               </div>
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
                 {g.canBet && me && (
                   <button
                     type="button"
                     className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-black hover:bg-orange-400"
-                    onClick={() => setModalGame(g)}
+                    onClick={() => setModal({ game: g, readOnly: false })}
                   >
                     {g.myBet ? "更改下注" : "下注"}
                   </button>
@@ -170,7 +170,15 @@ export default function Home() {
                 {g.canBet && !me && (
                   <span className="text-xs text-zinc-500">登入後可下注</span>
                 )}
-                {!g.canBet && <span className="text-xs text-zinc-500">已開賽或完場</span>}
+                {!g.canBet && (
+                  <button
+                    type="button"
+                    className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-sm text-zinc-200 hover:bg-white/10"
+                    onClick={() => setModal({ game: g, readOnly: true })}
+                  >
+                    查看下注情況
+                  </button>
+                )}
               </div>
             </li>
           ))}
@@ -185,9 +193,10 @@ export default function Home() {
       </main>
 
       <BetModal
-        game={modalGame}
-        open={!!modalGame}
-        onClose={() => setModalGame(null)}
+        game={modal?.game ?? null}
+        readOnly={modal?.readOnly ?? false}
+        open={!!modal}
+        onClose={() => setModal(null)}
         points={me?.points ?? 0}
         onSaved={() => {
           loadGames();

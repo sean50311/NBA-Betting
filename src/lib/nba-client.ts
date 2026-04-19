@@ -50,13 +50,18 @@ export async function fetchAllPlayoffGames(season: number): Promise<NBAGame[]> {
   return all;
 }
 
-export async function fetchGameById(id: number): Promise<NBAGame | null> {
+export async function fetchGameById(
+  id: number,
+  options?: { noCache?: boolean }
+): Promise<NBAGame | null> {
   const key = getApiKey();
   if (!key) return null;
 
   const res = await fetch(`${BASE}/games/${id}`, {
     headers: { Authorization: key },
-    next: { revalidate: 30 },
+    ...(options?.noCache
+      ? { cache: "no-store" as const }
+      : { next: { revalidate: 30 } }),
   });
 
   if (!res.ok) return null;

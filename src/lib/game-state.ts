@@ -4,8 +4,11 @@ import type { NBAGame } from "./nba-types";
 export function gameIsFinal(game: NBAGame): boolean {
   const s = (game.status || "").toLowerCase();
   if (s.includes("final")) return true;
+  if (s.includes("finished") || s.includes("complete")) return true;
   const pd = (game.period_detail || "").toLowerCase();
   if (pd.includes("final")) return true;
+  // BallDontLie 有時完場後字串不含 "final"（例如僅標示加時）
+  if (/\bf\/ot\b|final\/ot|end of (?:regulation|ot)/i.test(pd)) return true;
   return false;
 }
 
