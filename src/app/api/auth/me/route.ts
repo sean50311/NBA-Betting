@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { getSessionUserId } from "@/lib/session-server";
+import { displayPoints, pendingStakeSumForUser } from "@/lib/display-points";
 import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
@@ -18,13 +19,17 @@ export async function GET() {
     return NextResponse.json({ user: null });
   }
 
+  const pending = await pendingStakeSumForUser(uid);
+  const total = displayPoints(u.points, pending);
+
   return NextResponse.json({
     user: {
       id: u.id,
       username: u.username,
       nickname: u.nickname,
       avatarDataUrl: u.avatarDataUrl,
-      points: u.points,
+      points: total,
+      availablePoints: u.points,
     },
   });
 }

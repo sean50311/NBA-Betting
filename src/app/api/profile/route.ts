@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users } from "@/db/schema";
 import { getSessionUserId } from "@/lib/session-server";
+import { displayPoints, pendingStakeSumForUser } from "@/lib/display-points";
 import { eq } from "drizzle-orm";
 
 export const runtime = "nodejs";
@@ -41,6 +42,7 @@ export async function PATCH(req: Request) {
 
   const rows = await db.select().from(users).where(eq(users.id, uid));
   const u = rows[0]!;
+  const pending = await pendingStakeSumForUser(uid);
 
   return NextResponse.json({
     user: {
@@ -48,7 +50,8 @@ export async function PATCH(req: Request) {
       username: u.username,
       nickname: u.nickname,
       avatarDataUrl: u.avatarDataUrl,
-      points: u.points,
+      points: displayPoints(u.points, pending),
+      availablePoints: u.points,
     },
   });
 }

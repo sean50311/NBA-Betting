@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users, bets } from "@/db/schema";
+import { displayPoints, pendingStakeSumForUser } from "@/lib/display-points";
 import { eq } from "drizzle-orm";
 import { aggregateBetStats, emptyStats } from "@/lib/user-stats";
 
@@ -36,13 +37,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
   const statsByUser = aggregateBetStats(betRows);
   const s = statsByUser.get(id) ?? emptyStats();
+  const pendingStake = await pendingStakeSumForUser(id);
 
   return NextResponse.json({
     user: {
       id: u.id,
       nickname: u.nickname,
       avatarDataUrl: u.avatarDataUrl,
-      points: u.points,
+      points: displayPoints(u.points, pendingStake),
       createdAt: u.createdAt.toISOString(),
       wins: s.wins,
       losses: s.losses,

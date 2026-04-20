@@ -10,7 +10,7 @@ import {
   weekdayLabelZh,
 } from "@/lib/date-utils";
 
-type Me = { points: number } | null;
+type Me = { points: number; availablePoints: number } | null;
 
 export default function Home() {
   const [allGames, setAllGames] = useState<GameRow[]>([]);
@@ -42,7 +42,16 @@ export default function Home() {
   const loadMe = useCallback(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((d) => setMe(d.user ? { points: d.user.points } : null))
+      .then((d) =>
+        setMe(
+          d.user
+            ? {
+                points: d.user.points,
+                availablePoints: d.user.availablePoints ?? d.user.points,
+              }
+            : null
+        )
+      )
       .catch(() => setMe(null));
   }, []);
 
@@ -197,7 +206,7 @@ export default function Home() {
         readOnly={modal?.readOnly ?? false}
         open={!!modal}
         onClose={() => setModal(null)}
-        points={me?.points ?? 0}
+        points={me?.availablePoints ?? 0}
         onSaved={() => {
           loadGames();
           loadMe();

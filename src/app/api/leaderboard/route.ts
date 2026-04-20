@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { users, bets } from "@/db/schema";
+import { displayPoints, pendingStakeSumByUser } from "@/lib/display-points";
 import { aggregateBetStats, emptyStats } from "@/lib/user-stats";
 
 export const runtime = "nodejs";
 
 export async function GET() {
-  const [userRows, betRows] = await Promise.all([
+  const [userRows, betRows, pendingByUser] = await Promise.all([
     db
       .select({
         id: users.id,
@@ -16,17 +17,19 @@ export async function GET() {
       })
       .from(users),
     db.select({ userId: bets.userId, status: bets.status }).from(bets),
+    pendingStakeSumByUser(),
   ]);
 
   const statsByUser = aggregateBetStats(betRows);
 
   const rows = userRows.map((u) => {
     const s = statsByUser.get(u.id) ?? emptyStats();
+    const pendingStake = pendingByUser.get(u.id) ?? 0;
     return {
       id: u.id,
       nickname: u.nickname,
       avatarDataUrl: u.avatarDataUrl,
-      points: u.points,
+      points: displayPoints(u.points, pendingStake),
       wins: s.wins,
       losses: s.losses,
       pending: s.pending,
