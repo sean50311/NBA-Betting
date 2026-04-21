@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { nbaGames, type NbaGameRow } from "@/db/schema";
 import type { NBAGame } from "@/lib/nba-types";
