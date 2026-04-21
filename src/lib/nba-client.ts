@@ -1,4 +1,5 @@
 import type { GamesResponse, NBAGame } from "./nba-types";
+import { getCachedGamesByIds, upsertNbaGames } from "./nba-game-cache";
 
 const BASE = "https://api.balldontlie.io/nba/v1";
 
@@ -19,15 +20,25 @@ export function nbaSeasonFromEnv(): number {
 }
 
 /**
- * 下注／驗證用：先打單場 API；若失敗（部分場次單場端回 404 但列表仍有），改從季後賽列表尋找。
- * 一律略過快取，避免與賽程頁不一致。
+ * 下注／驗證用：先打單場 API；若失敗再跑季後賽列表；成功時寫入 `nba_games`。
+ * API 失敗（如 429）時最後回退本地快取。
  */
 export async function fetchGameForBetting(id: number): Promise<NBAGame | null> {
   const direct = await fetchGameById(id, { noCache: true });
-  if (direct) return direct;
+  if (direct) {
+    await upsertNbaGames([direct]).catch(() => {});
+    return direct;
+  }
 
-  const all = await fetchAllPlayoffGames(nbaSeasonFromEnv(), { noCache: true });
-  return all.find((g) => g.id === id) ?? null;
+  try {
+    const all = await fetchAllPlayoffGames(nbaSeasonFromEnv(), { noCache: true });
+    const found = all.find((g) => g.id === id) ?? null;
+    if (found) await upsertNbaGames([found]).catch(() => {});
+    return found;
+  } catch {
+    const fallback = await getCachedGamesByIds([id]);
+    return fallback.get(id) ?? null;
+  }
 }
 
 export async function fetchAllPlayoffGames(

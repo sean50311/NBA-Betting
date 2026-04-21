@@ -3,8 +3,10 @@ import { db } from "@/db";
 import { bets } from "@/db/schema";
 import { getSessionUserId } from "@/lib/session-server";
 import { eq, desc } from "drizzle-orm";
-import { fetchGameById } from "@/lib/nba-client";
+import { fetchGameForBetting } from "@/lib/nba-client";
+import { getCachedGamesByIds } from "@/lib/nba-game-cache";
 import { bpsToOdds } from "@/config/playoff";
+import type { NBAGame } from "@/lib/nba-types";
 
 export const runtime = "nodejs";
 
@@ -20,9 +22,21 @@ export async function GET() {
     .where(eq(bets.userId, uid))
     .orderBy(desc(bets.createdAt));
 
+  const gameIds = [...new Set(rows.map((r) => r.gameId))];
+  const fromDb = await getCachedGamesByIds(gameIds);
+  const gameById = new Map<number, NBAGame | null>();
+  for (const gid of gameIds) {
+    const hit = fromDb.get(gid);
+    if (hit) gameById.set(gid, hit);
+  }
+  for (const gid of gameIds) {
+    if (gameById.has(gid)) continue;
+    gameById.set(gid, await fetchGameForBetting(gid));
+  }
+
   const items = [];
   for (const b of rows) {
-    const game = await fetchGameById(b.gameId);
+    const game = gameById.get(b.gameId) ?? null;
     items.push({
       id: b.id,
       gameId: b.gameId,

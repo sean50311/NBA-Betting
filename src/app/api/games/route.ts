@@ -4,6 +4,7 @@ import {
   hasNbaApiKey,
   nbaSeasonFromEnv,
 } from "@/lib/nba-client";
+import { upsertNbaGames } from "@/lib/nba-game-cache";
 import { settlePendingBetsForGames } from "@/lib/settlement";
 import { gameHasStarted, gameIsFinal } from "@/lib/game-state";
 import { getSessionUserId } from "@/lib/session-server";
@@ -29,6 +30,8 @@ export async function GET() {
   try {
     const season = nbaSeasonFromEnv();
     const games = await fetchAllPlayoffGames(season);
+
+    await upsertNbaGames(games).catch(() => {});
 
     const ids = games.map((g) => g.id);
     const gamesById = new Map(games.map((g) => [g.id, g]));

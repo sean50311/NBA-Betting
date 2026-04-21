@@ -2,6 +2,7 @@ import { eq, and, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { bets, users } from "@/db/schema";
 import { fetchGameById } from "./nba-client";
+import { getCachedGamesByIds } from "./nba-game-cache";
 import type { NBAGame } from "./nba-types";
 import { gameIsFinal, winnerTeamId } from "./game-state";
 import { bpsToOdds } from "@/config/playoff";
@@ -17,8 +18,11 @@ export async function settlePendingBetsForGames(
   let settled = 0;
 
   for (const gid of ids) {
-    const game =
+    let game: NBAGame | null | undefined =
       gamesById?.get(gid) ?? (await fetchGameById(gid, { noCache: true }));
+    if (!game) {
+      game = (await getCachedGamesByIds([gid])).get(gid) ?? null;
+    }
     if (!game || !gameIsFinal(game)) continue;
 
     const winId = winnerTeamId(game);
