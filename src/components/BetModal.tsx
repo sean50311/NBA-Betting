@@ -87,7 +87,7 @@ export function BetModal({ game, open, readOnly = false, onClose, points, onSave
       .then((d) => setPublicBets(Array.isArray(d.bets) ? d.bets : []))
       .catch(() => setPublicBets([]))
       .finally(() => setLoadingList(false));
-  }, [game?.id, open]);
+  }, [game, open]);
 
   if (!open || !game) return null;
 

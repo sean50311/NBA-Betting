@@ -25,18 +25,14 @@ export function PointsTrendChart({ dates, series }: Props) {
     y: number;
   } | null>(null);
 
-  const { innerW, innerH, minY, maxY, paths, xTicks, yTicks, scaleX, scaleY } = useMemo(() => {
+  const { paths, xTicks, yTicks, scaleX, scaleY } = useMemo(() => {
     if (dates.length === 0 || series.length === 0) {
       return {
-        innerW: 0,
-        innerH: 0,
-        minY: 0,
-        maxY: 0,
         paths: [] as { userId: number; d: string; color: string }[],
         xTicks: [] as { idx: number; label: string }[],
         yTicks: [] as number[],
-        scaleX: (_i: number) => 0,
-        scaleY: (_v: number) => 0,
+        scaleX: () => 0,
+        scaleY: () => 0,
       };
     }
 
@@ -113,10 +109,6 @@ export function PointsTrendChart({ dates, series }: Props) {
     const xTicks = xTickIdx.map((idx) => ({ idx, label: dates[idx] ?? "" }));
 
     return {
-      innerW,
-      innerH,
-      minY: min,
-      maxY: max,
       paths,
       xTicks,
       yTicks,
