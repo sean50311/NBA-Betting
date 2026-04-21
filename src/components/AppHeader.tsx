@@ -3,6 +3,16 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+function BarChartIcon(props: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={props.className} aria-hidden>
+      <rect x="3" y="10" width="4.5" height="9" rx="1" />
+      <rect x="9.75" y="6" width="4.5" height="13" rx="1" />
+      <rect x="16.5" y="13" width="4.5" height="6" rx="1" />
+    </svg>
+  );
+}
+
 type Me = {
   id: number;
   username: string;
@@ -49,6 +59,14 @@ export function AppHeader() {
           </Link>
           <Link href="/leaderboard" className="text-zinc-300 hover:text-white">
             排行榜
+          </Link>
+          <Link
+            href="/points-trend"
+            className="inline-flex items-center justify-center rounded-lg border border-white/10 p-1.5 text-zinc-300 hover:bg-white/10 hover:text-white"
+            title="積分走勢"
+            aria-label="積分走勢"
+          >
+            <BarChartIcon className="h-5 w-5" />
           </Link>
           {me === undefined ? (
             <span className="text-zinc-500">…</span>
