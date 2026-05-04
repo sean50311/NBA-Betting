@@ -10,7 +10,7 @@ export const ROUND_ODDS = [2, 2.5, 3, 4] as const;
 /** 預設以 2025–26 季後賽常見時程為範例；可透過環境變數覆寫 */
 function boundaryDates() {
   return {
-    r1End: process.env.PLAYOFF_R1_END ?? "2026-05-06",
+    r1End: process.env.PLAYOFF_R1_END ?? "2026-05-03",
     r2End: process.env.PLAYOFF_R2_END ?? "2026-05-21",
     r3End: process.env.PLAYOFF_R3_END ?? "2026-06-08",
   };
