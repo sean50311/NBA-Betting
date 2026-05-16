@@ -11,7 +11,7 @@ export const ROUND_ODDS = [2, 2.5, 3, 4] as const;
 function boundaryDates() {
   return {
     r1End: process.env.PLAYOFF_R1_END ?? "2026-05-03",
-    r2End: process.env.PLAYOFF_R2_END ?? "2026-05-21",
+    r2End: process.env.PLAYOFF_R2_END ?? "2026-05-17",
     r3End: process.env.PLAYOFF_R3_END ?? "2026-06-08",
   };
 }
