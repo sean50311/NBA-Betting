@@ -11,10 +11,13 @@ export type GameRow = {
   visitor_team: { id: number; full_name: string; abbreviation: string };
   home_team_score?: number | null;
   visitor_team_score?: number | null;
+  round: number;
   roundLabel: string;
   odds: number;
   canBet: boolean;
   isFinal?: boolean;
+  /** 分區冠軍／總冠軍：不公開其他玩家本場下注 */
+  publicBetsHidden?: boolean;
   myBet: { pickedTeamId: number; stake: number; odds: number; status: string } | null;
 };
 
@@ -76,18 +79,27 @@ export function BetModal({ game, open, readOnly = false, onClose, points, onSave
     }
   }, [game, open, readOnly]);
 
+  const hidePublicBets =
+    game?.publicBetsHidden === true || (game != null && game.round >= 3);
+
   useEffect(() => {
-    if (!game || !open) {
+    if (!game || !open || hidePublicBets) {
       setPublicBets([]);
       return;
     }
     setLoadingList(true);
     fetch(`/api/games/${game.id}/bets`)
       .then((r) => r.json())
-      .then((d) => setPublicBets(Array.isArray(d.bets) ? d.bets : []))
+      .then((d) => {
+        if (d.publicBetsHidden) {
+          setPublicBets([]);
+          return;
+        }
+        setPublicBets(Array.isArray(d.bets) ? d.bets : []);
+      })
       .catch(() => setPublicBets([]))
       .finally(() => setLoadingList(false));
-  }, [game, open]);
+  }, [game, open, hidePublicBets]);
 
   if (!open || !game) return null;
 
@@ -216,6 +228,12 @@ export function BetModal({ game, open, readOnly = false, onClose, points, onSave
 
           <div className="mt-8 border-t border-white/10 pt-6">
             <h3 className="text-sm font-medium text-zinc-300">本場下注玩家</h3>
+            {hidePublicBets ? (
+              <p className="mt-3 rounded-lg border border-zinc-600/40 bg-zinc-800/40 px-3 py-2 text-sm text-zinc-400">
+                本分區冠軍賽／總冠軍賽不公開其他玩家下注內容；你仍可下注或查看自己的下注。
+              </p>
+            ) : (
+              <>
             <p className="mt-1 text-xs text-zinc-500">暱稱與下注內容公開；點暱稱可查看該玩家主頁。</p>
             {loadingList ? (
               <p className="mt-4 text-sm text-zinc-500">載入中…</p>
@@ -258,6 +276,8 @@ export function BetModal({ game, open, readOnly = false, onClose, points, onSave
                   </li>
                 ))}
               </ul>
+            )}
+              </>
             )}
           </div>
 

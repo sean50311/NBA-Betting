@@ -21,12 +21,13 @@ type PublicUser = {
 type PublicBetHist = {
   id: number;
   gameId: number;
-  stake: number;
-  odds: number;
+  stake: number | null;
+  odds: number | null;
   round: number;
   status: string;
   payout: number | null;
-  pickedTeamId: number;
+  pickedTeamId: number | null;
+  betHidden?: boolean;
   game: {
     date: string;
     home_team: { id: number; full_name: string; abbreviation: string };
@@ -171,7 +172,7 @@ export default function PublicUserPage() {
                         ? `${g.visitor_team.abbreviation} @ ${g.home_team.abbreviation}`
                         : `場次 #${b.gameId}`;
                       const side =
-                        g && b.pickedTeamId === g.home_team.id
+                        g && b.pickedTeamId != null && b.pickedTeamId === g.home_team.id
                           ? g.home_team.abbreviation
                           : g?.visitor_team.abbreviation;
                       const roundLabel =
@@ -182,13 +183,29 @@ export default function PublicUserPage() {
                           <td className="py-3 align-top">{label}</td>
                           <td className="py-3 align-top text-zinc-400">{roundLabel}</td>
                           <td className="py-3 align-top tabular-nums">
-                            {b.stake} 分 · {side}
+                            {b.betHidden ? (
+                              <span className="text-zinc-500">封盤中（內容不公開）</span>
+                            ) : (
+                              <>
+                                {b.stake} 分 · {side}
+                              </>
+                            )}
                           </td>
-                          <td className="py-3 align-top tabular-nums">{b.odds}x</td>
+                          <td className="py-3 align-top tabular-nums">
+                            {b.betHidden ? "—" : `${b.odds}x`}
+                          </td>
                           <td className="py-3 align-top">
-                            {b.status === "pending" && <span className="text-amber-300">未結算</span>}
+                            {b.betHidden && b.status === "pending" && (
+                              <span className="text-zinc-500">封盤中</span>
+                            )}
+                            {!b.betHidden && b.status === "pending" && (
+                              <span className="text-amber-300">未結算</span>
+                            )}
                             {b.status === "won" && (
-                              <span className="text-emerald-400">贏 · +{b.payout ?? 0} 返還</span>
+                              <span className="text-emerald-400">
+                                贏
+                                {!b.betHidden && b.payout != null ? ` · +${b.payout} 返還` : null}
+                              </span>
                             )}
                             {b.status === "lost" && <span className="text-zinc-500">輸</span>}
                           </td>

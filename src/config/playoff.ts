@@ -25,6 +25,11 @@ export function playoffRoundFromDate(gameDate: string): 1 | 2 | 3 | 4 {
   return 4;
 }
 
+/** 分區冠軍賽（3）與總冠軍賽（4）不公開「本場其他玩家下注」 */
+export function isPublicBetsHidden(round: number): boolean {
+  return round >= 3;
+}
+
 export function oddsForRound(round: 1 | 2 | 3 | 4): number {
   return ROUND_ODDS[round - 1];
 }

@@ -11,7 +11,7 @@ import { getSessionUserId } from "@/lib/session-server";
 import { db } from "@/db";
 import { bets } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { oddsForRound, playoffRoundFromDate } from "@/config/playoff";
+import { isPublicBetsHidden, oddsForRound, playoffRoundFromDate } from "@/config/playoff";
 import { bpsToOdds } from "@/config/playoff";
 
 export const runtime = "nodejs";
@@ -75,6 +75,7 @@ export async function GET() {
         odds,
         canBet: !started && !final,
         isFinal: final,
+        publicBetsHidden: isPublicBetsHidden(round),
         myBet: mine
           ? {
               pickedTeamId: mine.pickedTeamId,

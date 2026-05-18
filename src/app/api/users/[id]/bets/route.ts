@@ -4,7 +4,8 @@ import { bets, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { fetchGameForBetting } from "@/lib/nba-client";
 import { getCachedGamesByIds } from "@/lib/nba-game-cache";
-import { bpsToOdds } from "@/config/playoff";
+import { bpsToOdds, isPublicBetsHidden } from "@/config/playoff";
+import { getSessionUserId } from "@/lib/session-server";
 import type { NBAGame } from "@/lib/nba-types";
 
 export const runtime = "nodejs";
@@ -21,6 +22,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   if (exists.length === 0) {
     return NextResponse.json({ error: "找不到使用者" }, { status: 404 });
   }
+
+  const viewerId = await getSessionUserId();
+  const isOwner = viewerId === userId;
 
   const rows = await db
     .select()
@@ -43,17 +47,19 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const items = [];
   for (const b of rows) {
     const game = gameById.get(b.gameId) ?? null;
+    const betHidden = !isOwner && isPublicBetsHidden(b.round);
     items.push({
       id: b.id,
       gameId: b.gameId,
-      stake: b.stake,
-      odds: bpsToOdds(b.odds),
+      stake: betHidden ? null : b.stake,
+      odds: betHidden ? null : bpsToOdds(b.odds),
       round: b.round,
       status: b.status,
-      payout: b.payout,
+      payout: betHidden ? null : b.payout,
       settledAt: b.settledAt,
       createdAt: b.createdAt,
-      pickedTeamId: b.pickedTeamId,
+      pickedTeamId: betHidden ? null : b.pickedTeamId,
+      betHidden,
       game: game
         ? {
             date: game.date,

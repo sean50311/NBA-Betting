@@ -2,9 +2,24 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { bets, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
-import { bpsToOdds } from "@/config/playoff";
+import { bpsToOdds, isPublicBetsHidden, playoffRoundFromDate } from "@/config/playoff";
+import { fetchGameForBetting } from "@/lib/nba-client";
+import { getCachedGamesByIds } from "@/lib/nba-game-cache";
 
 export const runtime = "nodejs";
+
+async function roundForGame(gameId: number): Promise<number> {
+  const cached = await getCachedGamesByIds([gameId]);
+  const game = cached.get(gameId) ?? (await fetchGameForBetting(gameId));
+  if (game) return playoffRoundFromDate(game.date);
+
+  const rows = await db
+    .select({ round: bets.round })
+    .from(bets)
+    .where(eq(bets.gameId, gameId))
+    .limit(1);
+  return rows[0]?.round ?? 1;
+}
 
 /** 公開：該場次所有玩家的下注摘要（不含帳號密碼） */
 export async function GET(_req: Request, ctx: { params: Promise<{ gameId: string }> }) {
@@ -12,6 +27,15 @@ export async function GET(_req: Request, ctx: { params: Promise<{ gameId: string
   const gameId = Number(gidStr);
   if (!Number.isFinite(gameId) || gameId < 1) {
     return NextResponse.json({ error: "無效的場次" }, { status: 400 });
+  }
+
+  const round = await roundForGame(gameId);
+  if (isPublicBetsHidden(round)) {
+    return NextResponse.json({
+      bets: [],
+      publicBetsHidden: true,
+      message: "本分區冠軍賽／總冠軍賽不公開其他玩家下注內容",
+    });
   }
 
   const rows = await db
@@ -45,5 +69,5 @@ export async function GET(_req: Request, ctx: { params: Promise<{ gameId: string
     createdAt: r.createdAt.toISOString(),
   }));
 
-  return NextResponse.json({ bets: list });
+  return NextResponse.json({ bets: list, publicBetsHidden: false });
 }
