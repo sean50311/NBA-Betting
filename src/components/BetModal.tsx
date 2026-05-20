@@ -80,7 +80,8 @@ export function BetModal({ game, open, readOnly = false, onClose, points, onSave
   }, [game, open, readOnly]);
 
   const hidePublicBets =
-    game?.publicBetsHidden === true || (game != null && game.round >= 3);
+    !game?.isFinal &&
+    (game?.publicBetsHidden === true || (game != null && game.round >= 3));
 
   useEffect(() => {
     if (!game || !open || hidePublicBets) {
@@ -230,7 +231,7 @@ export function BetModal({ game, open, readOnly = false, onClose, points, onSave
             <h3 className="text-sm font-medium text-zinc-300">本場下注玩家</h3>
             {hidePublicBets ? (
               <p className="mt-3 rounded-lg border border-zinc-600/40 bg-zinc-800/40 px-3 py-2 text-sm text-zinc-400">
-                本分區冠軍賽／總冠軍賽不公開其他玩家下注內容；你仍可下注或查看自己的下注。
+                本分區冠軍賽／總冠軍賽進行中不公開其他玩家下注；完場後可查看。你仍可下注或查看自己的下注。
               </p>
             ) : (
               <>

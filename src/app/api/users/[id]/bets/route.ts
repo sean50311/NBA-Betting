@@ -5,6 +5,7 @@ import { eq, desc } from "drizzle-orm";
 import { fetchGameForBetting } from "@/lib/nba-client";
 import { getCachedGamesByIds } from "@/lib/nba-game-cache";
 import { bpsToOdds, isPublicBetsHidden } from "@/config/playoff";
+import { gameIsFinal } from "@/lib/game-state";
 import { getSessionUserId } from "@/lib/session-server";
 import type { NBAGame } from "@/lib/nba-types";
 
@@ -47,7 +48,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
   const items = [];
   for (const b of rows) {
     const game = gameById.get(b.gameId) ?? null;
-    const betHidden = !isOwner && isPublicBetsHidden(b.round);
+    const gameOver = game
+      ? gameIsFinal(game)
+      : b.status === "won" || b.status === "lost";
+    const betHidden = !isOwner && isPublicBetsHidden(b.round, gameOver);
     items.push({
       id: b.id,
       gameId: b.gameId,

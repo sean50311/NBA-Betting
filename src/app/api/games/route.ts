@@ -75,7 +75,7 @@ export async function GET() {
         odds,
         canBet: !started && !final,
         isFinal: final,
-        publicBetsHidden: isPublicBetsHidden(round),
+        publicBetsHidden: isPublicBetsHidden(round, final),
         myBet: mine
           ? {
               pickedTeamId: mine.pickedTeamId,

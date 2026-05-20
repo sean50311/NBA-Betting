@@ -25,8 +25,12 @@ export function playoffRoundFromDate(gameDate: string): 1 | 2 | 3 | 4 {
   return 4;
 }
 
-/** 分區冠軍賽（3）與總冠軍賽（4）不公開「本場其他玩家下注」 */
-export function isPublicBetsHidden(round: number): boolean {
+/**
+ * 分區冠軍賽（3）與總冠軍賽（4）在比賽進行中不公開「本場其他玩家下注」；
+ * 完場後恢復公開。
+ */
+export function isPublicBetsHidden(round: number, gameIsFinal: boolean): boolean {
+  if (gameIsFinal) return false;
   return round >= 3;
 }
 

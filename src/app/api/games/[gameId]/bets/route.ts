@@ -3,22 +3,34 @@ import { db } from "@/db";
 import { bets, users } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { bpsToOdds, isPublicBetsHidden, playoffRoundFromDate } from "@/config/playoff";
+import { gameIsFinal } from "@/lib/game-state";
 import { fetchGameForBetting } from "@/lib/nba-client";
 import { getCachedGamesByIds } from "@/lib/nba-game-cache";
+import type { NBAGame } from "@/lib/nba-types";
 
 export const runtime = "nodejs";
 
-async function roundForGame(gameId: number): Promise<number> {
+async function gameMetaForBets(
+  gameId: number
+): Promise<{ round: number; isFinal: boolean }> {
   const cached = await getCachedGamesByIds([gameId]);
-  const game = cached.get(gameId) ?? (await fetchGameForBetting(gameId));
-  if (game) return playoffRoundFromDate(game.date);
+  const game: NBAGame | null | undefined =
+    cached.get(gameId) ?? (await fetchGameForBetting(gameId));
+  if (game) {
+    return {
+      round: playoffRoundFromDate(game.date),
+      isFinal: gameIsFinal(game),
+    };
+  }
 
   const rows = await db
-    .select({ round: bets.round })
+    .select({ round: bets.round, status: bets.status })
     .from(bets)
-    .where(eq(bets.gameId, gameId))
-    .limit(1);
-  return rows[0]?.round ?? 1;
+    .where(eq(bets.gameId, gameId));
+  const round = rows[0]?.round ?? 1;
+  const allSettled =
+    rows.length > 0 && rows.every((r) => r.status === "won" || r.status === "lost");
+  return { round, isFinal: allSettled };
 }
 
 /** 公開：該場次所有玩家的下注摘要（不含帳號密碼） */
@@ -29,12 +41,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ gameId: string
     return NextResponse.json({ error: "無效的場次" }, { status: 400 });
   }
 
-  const round = await roundForGame(gameId);
-  if (isPublicBetsHidden(round)) {
+  const { round, isFinal } = await gameMetaForBets(gameId);
+  if (isPublicBetsHidden(round, isFinal)) {
     return NextResponse.json({
       bets: [],
       publicBetsHidden: true,
-      message: "本分區冠軍賽／總冠軍賽不公開其他玩家下注內容",
+      message: "本分區冠軍賽／總冠軍賽進行中不公開其他玩家下注；完場後可查看",
     });
   }
 
