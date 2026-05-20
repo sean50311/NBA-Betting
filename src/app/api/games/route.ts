@@ -33,14 +33,14 @@ export async function GET() {
 
     await upsertNbaGames(games).catch(() => {});
 
-    const ids = games.map((g) => g.id);
     const gamesById = new Map(games.map((g) => [g.id, g]));
     const pendRows = await db
       .select({ gameId: bets.gameId })
       .from(bets)
       .where(eq(bets.status, "pending"));
     const pendIds = [...new Set(pendRows.map((r) => r.gameId))];
-    await settlePendingBetsForGames([...new Set([...ids, ...pendIds])], gamesById);
+    // 僅結算仍有 pending 下注的場次，避免每次載入賽程都掃描整季已完場比賽
+    await settlePendingBetsForGames(pendIds, gamesById);
 
     const uid = await getSessionUserId();
     const userBets =

@@ -36,10 +36,11 @@ export async function settlePendingBetsForGames(
     for (const b of pending) {
       const odds = bpsToOdds(b.odds);
       const won = b.pickedTeamId === winId;
+      /** 贏家總返還（含本金）= stake × 賠率；下注時已先扣 stake */
       const payout = won ? Math.round(b.stake * odds) : 0;
 
-      await db.transaction(async (tx) => {
-        await tx
+      const didSettle = await db.transaction(async (tx) => {
+        const updated = await tx
           .update(bets)
           .set({
             status: won ? "won" : "lost",
@@ -47,15 +48,21 @@ export async function settlePendingBetsForGames(
             settledAt: new Date(),
             updatedAt: new Date(),
           })
-          .where(eq(bets.id, b.id));
+          .where(and(eq(bets.id, b.id), eq(bets.status, "pending")))
+          .returning({ id: bets.id });
 
-        await tx
-          .update(users)
-          .set({ points: sql`${users.points} + ${payout}` })
-          .where(eq(users.id, b.userId));
+        if (updated.length === 0) return false;
+
+        if (payout > 0) {
+          await tx
+            .update(users)
+            .set({ points: sql`${users.points} + ${payout}` })
+            .where(eq(users.id, b.userId));
+        }
+        return true;
       });
 
-      settled++;
+      if (didSettle) settled++;
     }
   }
 
